@@ -7,10 +7,6 @@ class TableData(BaseModel):
     columnName: str = Field(..., description="Column Name of the Table")
     sampleData: list[Any] = Field(..., description="Sample Data of the Table")
 
-    @validator("sampleData", pre=True)
-    def transform_sample_data(cls, value) -> str:
-        return list(map(str, value))
-
 
 class SherlockTagsRequest(BaseModel):
     data: list[TableData] = Field(

@@ -20,6 +20,7 @@ from sherlock.features.preprocessing import (
     load_parquet_values,
 )
 from sherlock.features.word_embeddings import initialise_word_embeddings
+from sherlock.schema import TableData, SherlockTagsRequest, SherlockTagsResponse
 
 
 @app.get("/health")
@@ -28,15 +29,16 @@ async def health():
     return {"status": "ok"}
 
 
-@app.post("/sherlock/get_tags")
-async def sherlock_get_tags(body):
+@app.post("/sherlock/get_tags", response_model=SherlockTagsResponse)
+async def sherlock_get_tags(body: SherlockTagsRequest):
     try:
+
         model = SherlockModel()
         model.initialize_model_from_json(with_weights=True, model_id="sherlock")
 
         values = []
-        for table_data in body["data"]:
-            sample_data = table_data["sampleData"]
+        for table_data in body.data:
+            sample_data = table_data.sampleData
             sample_data_str = list(map(str, sample_data))
             values.append(sample_data_str)
 
@@ -54,13 +56,12 @@ async def sherlock_get_tags(body):
 
         tags_response = {}
         for idx in range(len(predicted_labels)):
-            tags_response[body["data"][idx].columnName] = [predicted_labels[idx]]
+            tags_response[body.data[idx].columnName] = [predicted_labels[idx]]
 
         print(f"tags_response: {tags_response}")
 
-        return {
-            "tags": tags_response
-        }
+        response = SherlockTagsResponse(tags=tags_response)
+        return response
     except Exception as ex:
         print(f"Error: {ex}")
         traceback.print_exc()
